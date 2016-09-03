@@ -16,14 +16,14 @@ static const int kDelayBetweenFramesMS = 1000;
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
-  LAGS_logtostderr = true;
+  FLAGS_logtostderr = true;
 
   cv::VideoCapture video_capture(0);
 
   // Get the first frame.
   cv::Mat previous_frame;
   video_capture >> previous_frame;
-  cv::waitKey(30);
+  cv::waitKey(kDelayBetweenFramesMS);
   cv::resize(previous_frame, previous_frame, kFrameSize);
 
   int image_counter = 0;
@@ -55,9 +55,7 @@ int main(int argc, char** argv) {
     cv::Mat visualization;
     cv::hconcat(frame, motion, visualization);
     cv::imshow("Visualization", visualization);
-    if (cv::waitKey(kDelayBetweenFramesMS) > 0) {
-      break;
-    }
+    cv::waitKey(kDelayBetweenFramesMS);
 
     previous_frame = frame.clone();
   }
