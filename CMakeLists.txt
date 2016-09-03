@@ -20,9 +20,7 @@ ENDIF()
 # Require C++ 11.
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-# Libraries will be stored in the "lib" directory, and binaries in "bin".
-SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+# Binaries will be stored in the "bin" directory.
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Grab all files in the source directory.
@@ -35,7 +33,5 @@ add_executable(
 )
 target_link_libraries(
   MotionCamera
-  glog
-  gflags
   ${OpenCV_LIBS}
 )
