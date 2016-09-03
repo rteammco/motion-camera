@@ -1,24 +1,36 @@
+// This program captures video from a camera (e.g. a webcam) in periodic
+// intervals. If motion was detected between the two images the frame and the
+// motion will be displayed.
+//
+// Optionally, the user can add a command line argument that specifies a
+// directory on the machine. If this is provided, the frames where motion was
+// detected will be saved to that directory.
+
+#include <ctime>
+#include <iostream>
 #include <string>
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
-#include "gflags/gflags.h"
-#include "glog/logging.h"
-
-DEFINE_string(save_image_path, "", "Where the movement frames get saved.");
-
 static const cv::Size kFrameSize(400, 300);
 static const int64 kMotionRegisterThresh = 1;
 static const int kDelayBetweenFramesMS = 1000;
 
 int main(int argc, char** argv) {
-  gflags::ParseCommandLineFlags(&argc, &argv, true);
-  google::InitGoogleLogging(argv[0]);
-  FLAGS_logtostderr = true;
+  // Process the argument for a save image path if one was provided.
+  std::string save_image_path;  // Initially empty.
+  if (argc > 1) {
+    save_image_path = std::string(argv[1]);
+    std::cout << save_image_path << std::endl;
+  }
 
   cv::VideoCapture video_capture(0);
+  if (!video_capture.isOpened()) {
+    std::cerr << "Could not open camera." << std::endl;
+    return -1;
+  }
 
   // Get the first frame.
   cv::Mat previous_frame;
@@ -40,18 +52,28 @@ int main(int argc, char** argv) {
     cv::Mat binary_motion;
     cv::threshold(motion, binary_motion, 100, 1, cv::THRESH_BINARY);
     const int64 motion_amount = cv::sum(binary_motion)[0];
+
     if (motion_amount >= kMotionRegisterThresh) {
-      LOG(INFO) << "MOTION DETECTED";
-      if (!FLAGS_save_image_path.empty()) {
-        std::string path = FLAGS_save_image_path + "/img_"
-                         + std::to_string(image_counter) + ".jpg";
+      // Get the current time string.
+      const time_t sys_time = time(0);
+      const tm* time_now = localtime(&sys_time);
+      std::string time_string(asctime(time_now));
+      time_string.erase(time_string.end() - 1);  // Erase trailing newline.
+      std::cout << "MOTION DETECTED: " << time_string << std::endl;
+
+      // Save the frame to a file if a path was provided.
+      if (!save_image_path.empty()) {
+        // Path of the form "user/specified/path/img_0.jpg" where 0 is replaced
+        // with the current image number.
+        std::string path =
+            save_image_path + "/img_" + std::to_string(image_counter) + ".jpg";
         cv::imwrite(path, frame);
         image_counter++;
-        LOG(INFO) << "Saved image " << path;
+        std::cout << "Saved image: " << path << std::endl;
       }
     }
 
-    // Display the images.
+    // Display the raw frame and the motion image for visualization.
     cv::Mat visualization;
     cv::hconcat(frame, motion, visualization);
     cv::imshow("Visualization", visualization);
@@ -60,6 +82,6 @@ int main(int argc, char** argv) {
     previous_frame = frame.clone();
   }
 
-  LOG(INFO) << "Program finished.";
-  return EXIT_SUCCESS;
+  std::cout << "Program finished." << std::endl;
+  return 0;
 }
